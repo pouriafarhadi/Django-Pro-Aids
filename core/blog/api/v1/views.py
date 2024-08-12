@@ -124,7 +124,15 @@ class PostDetail(RetrieveUpdateDestroyAPIView):
 
 
 class PostModelViewSet(viewsets.ModelViewSet):
+    """
+    this class showcase post model api endpoints and functionalities
+    """
+
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    """
+    custom permission like IsOwnerOrReadOnly:
+    ref drf permissions 
+    """
     serializer_class = PostSerializer
     queryset = Post.objects.filter(status=True)
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -133,9 +141,17 @@ class PostModelViewSet(viewsets.ModelViewSet):
     search_fields = ["title", "content"]
     ordering_fields = ["published_date"]
     pagination_class = DefaultPagination
+    """
+    filter/search/ordering are changeable by a class that inherits related parent class provided in filter backends 
+    (ref: drf filtering)
+    """
 
 
 class CategoryModelViewSet(viewsets.ModelViewSet):
+    """
+    this class showcase category model api endpoints and functionalities
+    """
+
     permission_classes = [IsAuthenticated]
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
