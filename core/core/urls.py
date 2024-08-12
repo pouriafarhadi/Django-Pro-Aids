@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -29,12 +30,13 @@ schema_view = get_schema_view(
     openapi.Info(
         title="Blog Api",
         default_version="v1",
-        description="this is a test api for maktabkhooneh project",
+        description="this is a test api for my project",
         terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="bigdeli.ali3@gmail.com"),
+        contact=openapi.Contact(email="pouria.f8410@gmail.com"),
         license=openapi.License(name="MIT License"),
     ),
     public=True,
+    # you can modify this attribute. who may access your APIs.
     permission_classes=[permissions.AllowAny],
 )
 
@@ -51,7 +53,7 @@ urlpatterns = [
     path("blog/", include("blog.urls")),
     # path('api-docs/',include_docs_urls(title='api sample')),
     path(
-        "swagger/output.json",
+        "swagger/output.json",  # use this url to generate swagger json api endpoint file which can be used in POSTMAN
         schema_view.without_ui(cache_timeout=0),
         name="schema-json",
     ),
