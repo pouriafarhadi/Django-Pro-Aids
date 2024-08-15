@@ -1,13 +1,21 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError, AuthenticationFailed
+
 from ...models import User, Profile
 from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+import jwt
+from django.conf import settings
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """
+    serializer for registering new user
+    """
+
     password1 = serializers.CharField(max_length=255, write_only=True)
 
     class Meta:
@@ -26,11 +34,20 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
+        """
+        overriding create method because there is no need for password1 in create_user
+        """
         validated_data.pop("password1", None)
         return User.objects.create_user(**validated_data)
 
 
 class CustomAuthTokenSerializer(serializers.Serializer):
+    """
+    overriding AuthTokenSerializer which is used in ObtainAuthToken
+    (view which uses this serializer uses ObtainAuthToken as its parent class which used AuthTokenSerializer)
+    the purpose is to allow users to log in with their own EMAIL ADDRESS not username.
+    """
+
     email = serializers.CharField(label=_("Email"), write_only=True)
     password = serializers.CharField(
         label=_("Password"),
@@ -68,6 +85,10 @@ class CustomAuthTokenSerializer(serializers.Serializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    using custom serializer to add some extra data to validated data as well as checking if the user is verified
+    """
+
     def validate(self, attrs):
         validated_data = super().validate(attrs)
         if not self.user.is_verified:
@@ -78,6 +99,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class ChangePasswordSerialier(serializers.Serializer):
+    """
+    serializer for changing password and validate new password
+    """
 
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
@@ -96,6 +120,10 @@ class ChangePasswordSerialier(serializers.Serializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    """
+    serializer for profile view
+    """
+
     email = serializers.CharField(source="user.email", read_only=True)
 
     class Meta:
@@ -112,6 +140,10 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class ActivationResendSerializer(serializers.Serializer):
+    """
+    using serializer for validating the email and manage browsable API
+    """
+
     email = serializers.EmailField(required=True)
 
     def validate(self, attrs):
@@ -126,3 +158,75 @@ class ActivationResendSerializer(serializers.Serializer):
             )
         attrs["user"] = user_obj
         return super().validate(attrs)
+
+
+class PasswordResetRequestEmailSerializer(serializers.Serializer):
+    """
+    serializer to validate the email whether if the related user exists
+    """
+
+    email = serializers.EmailField(min_length=2)
+
+    class Meta:
+        fields = ["email"]
+
+    def validate(self, attrs):
+        try:
+            user = User.objects.get(email=attrs["email"])
+        except User.DoesNotExist:
+            raise ValidationError({"detail": "There is no user with provided email"})
+        attrs["user"] = user
+        return super().validate(attrs)
+
+
+class PasswordResetTokenVerificationSerializer(serializers.ModelSerializer):
+    """
+    serializer for validating changing password token (provided in email which is sent before)
+    """
+
+    token = serializers.CharField(max_length=600)
+
+    class Meta:
+        model = User
+        fields = ["token"]
+
+    def validate(self, attrs):
+        token = attrs["token"]
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            user = User.objects.get(id=payload["user_id"])
+        except jwt.ExpiredSignatureError as identifier:
+            return ValidationError({"detail": "Token expired"})
+        except jwt.exceptions.DecodeError as identifier:
+            raise ValidationError({"detail": "Token invalid"})
+
+        attrs["user"] = user
+        return super().validate(attrs)
+
+
+class SetNewPasswordSerializer(serializers.Serializer):
+    """
+    Serializer for setting new password
+    """
+
+    token = serializers.CharField(max_length=600)
+    password = serializers.CharField(min_length=6, max_length=68, write_only=True)
+    password1 = serializers.CharField(min_length=6, max_length=68, write_only=True)
+
+    class Meta:
+        fields = ["password", "password1", "token"]
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["password1"]:
+            raise serializers.ValidationError({"details": "Passwords does not match"})
+        try:
+            password = attrs.get("password")
+            token = attrs.get("token")
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            user = User.objects.get(id=payload["user_id"])
+            user.set_password(password)
+            user.save()
+
+            return super().validate(attrs)
+        except Exception as e:
+            raise AuthenticationFailed("The reset link is invalid", 401)
