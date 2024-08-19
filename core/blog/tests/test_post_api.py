@@ -4,22 +4,30 @@ import pytest
 from datetime import datetime
 from accounts.models import User
 
+"""fixtures are decorators which provide us accessible objects which we want to use them many times."""
+
 
 @pytest.fixture
 def api_client():
+    """
+    fake user which want to send a request
+    """
     client = APIClient()
     return client
 
 
 @pytest.fixture
 def common_user():
+    """
+    a common user which we use it as we want to access some endpoints that has a IsAuthenticated permission
+    """
     user = User.objects.create_user(
         email="admin@admin.com", password="a/@1234567", is_verified=True
     )
     return user
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db  # to access the database
 class TestPostApi:
     def test_get_post_response_200_status(self, api_client):
         url = reverse("blog:api-v1:post-list")

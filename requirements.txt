@@ -20,10 +20,14 @@ gunicorn
 django-mail-templated
 
 # refactoring and tests
-black
+black # if want to run from docker code "docker-compose exec <container name> sh -c 'black .' "
 flake8
+# use flake8 to check pep8 rules and fix those mistakes before deployment
+# install flake8 via docker-compose shell and use it like > flake8 . > means checks the directory you are currently in
+# configure flake8 by creating .flake8 and config files like in the core dir.
 pytest
 pytest-django
+# pytest is general/we need pytest-django to test django and same as flake it needs a file in the core app named pytest.ini
 Faker
 
 # background proccess and cache

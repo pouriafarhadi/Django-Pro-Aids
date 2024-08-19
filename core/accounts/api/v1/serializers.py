@@ -195,9 +195,9 @@ class PasswordResetTokenVerificationSerializer(serializers.ModelSerializer):
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             user = User.objects.get(id=payload["user_id"])
-        except jwt.ExpiredSignatureError as identifier:
+        except jwt.ExpiredSignatureError:
             return ValidationError({"detail": "Token expired"})
-        except jwt.exceptions.DecodeError as identifier:
+        except jwt.exceptions.DecodeError:
             raise ValidationError({"detail": "Token invalid"})
 
         attrs["user"] = user
@@ -228,5 +228,5 @@ class SetNewPasswordSerializer(serializers.Serializer):
             user.save()
 
             return super().validate(attrs)
-        except Exception as e:
+        except Exception:
             raise AuthenticationFailed("The reset link is invalid", 401)

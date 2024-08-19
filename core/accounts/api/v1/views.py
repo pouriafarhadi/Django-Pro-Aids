@@ -1,9 +1,25 @@
+# first write external modules installed on
+import jwt
+from rest_framework_simplejwt.tokens import RefreshToken
+from jwt.exceptions import ExpiredSignatureError, InvalidSignatureError
+from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.http import HttpRequest
 from django.urls import reverse
 from rest_framework import generics, mixins
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.contrib.auth import get_user_model
+
+# then write internal (locally imports)
+from ...models import Profile
+from django.shortcuts import get_object_or_404
+from ..utils import Util
 from .serializers import (
     RegistrationSerializer,
     CustomAuthTokenSerializer,
@@ -15,19 +31,6 @@ from .serializers import (
     PasswordResetTokenVerificationSerializer,
     SetNewPasswordSerializer,
 )
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
-from django.contrib.auth import get_user_model
-from ...models import Profile
-from django.shortcuts import get_object_or_404
-from ..utils import Util
-from rest_framework_simplejwt.tokens import RefreshToken
-import jwt
-from jwt.exceptions import ExpiredSignatureError, InvalidSignatureError
-from django.conf import settings
 
 User = get_user_model()
 

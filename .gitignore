@@ -79,7 +79,7 @@ ipython_config.py
 
 # pyenv
 .python-version
-
+./CI-CD
 # celery beat schedule file
 celerybeat-schedule
 
