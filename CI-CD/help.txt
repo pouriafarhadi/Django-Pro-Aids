@@ -4,6 +4,7 @@ then it should test flake8 and pytest, check whether it's okay or not.
 (warnings are not the matter)
 
 1. create an action (docker)
+2. configure the action with details
 
 
 CD :
